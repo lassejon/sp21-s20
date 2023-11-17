@@ -113,7 +113,7 @@ public class Model extends Observable {
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
-
+        board.move()
         checkGameOver();
         if (changed) {
             setChanged();
@@ -137,7 +137,11 @@ public class Model extends Observable {
      *  Empty spaces are stored as null.
      * */
     public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
+        for (var tile : b) {
+            if (tile == null) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -147,7 +151,11 @@ public class Model extends Observable {
      * given a Tile object t, we get its value with t.value().
      */
     public static boolean maxTileExists(Board b) {
-        // TODO: Fill in this function.
+        for (var tile : b) {
+            if (tile != null && tile.value() == MAX_PIECE) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -158,7 +166,33 @@ public class Model extends Observable {
      * 2. There are two adjacent tiles with the same value.
      */
     public static boolean atLeastOneMoveExists(Board b) {
-        // TODO: Fill in this function.
+        return emptySpaceExists(b) || equalAdjacentTilesExists(b);
+    }
+
+    private static boolean equalAdjacentTilesExists(Board b) {
+        var size = b.size();
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                var tile = b.tile(c, r);
+
+                var rightIndex = c + 1;
+                Tile rightTile = null;
+                if (rightIndex <= size - 1) {
+                    rightTile = b.tile(rightIndex, r);
+                }
+
+                var belowIndex = r + 1;
+                Tile belowTile = null;
+                if (belowIndex <= size - 1) {
+                    belowTile = b.tile(c, belowIndex);
+                }
+
+                if (rightTile != null && tile.value() == rightTile.value() ||
+                        belowTile != null && tile.value() == belowTile.value()) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
