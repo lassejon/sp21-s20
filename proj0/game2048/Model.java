@@ -107,17 +107,59 @@ public class Model extends Observable {
      *    and the trailing tile does not.
      * */
     public boolean tilt(Side side) {
-        boolean changed;
-        changed = false;
+        boolean changed = false;
 
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
-        board.move()
         checkGameOver();
+
+        board.setViewingPerspective(side);
+        changed = MovePieces();
+
         if (changed) {
             setChanged();
         }
+
+        board.setViewingPerspective(Side.NORTH);
+        return changed;
+    }
+
+    public boolean MovePieces() {
+        var size = board.size();
+        var changed = false;
+
+        for (int c = 0; c < size; c++) {
+            var moveToRow = size - 1;
+            var lastMoveWasMerge = false;
+
+            for (int r = size - 2; r >= 0; r--) {
+                var currentTile = board.tile(c, r);
+                if (currentTile == null) {
+                    continue;
+                }
+
+                var aboveTile = board.tile(c, moveToRow);
+                while(aboveTile != null && aboveTile.value() != currentTile.value() && moveToRow > r) {
+                    moveToRow--;
+                    aboveTile = board.tile(c, moveToRow);
+                }
+
+                if (moveToRow <= r) {
+                    moveToRow = r;
+                    continue;
+                }
+
+                lastMoveWasMerge = board.move(c, moveToRow, currentTile);
+                changed = true;
+
+                if (lastMoveWasMerge) {
+                    score += aboveTile.value() * 2;
+                    moveToRow--;
+                }
+            }
+        }
+
         return changed;
     }
 
@@ -125,12 +167,7 @@ public class Model extends Observable {
      *  appropriately.
      */
     private void checkGameOver() {
-        gameOver = checkGameOver(board);
-    }
-
-    /** Determine whether game is over. */
-    private static boolean checkGameOver(Board b) {
-        return maxTileExists(b) || !atLeastOneMoveExists(b);
+        gameOver = maxTileExists(board) || !atLeastOneMoveExists(board);
     }
 
     /** Returns true if at least one space on the Board is empty.
@@ -175,17 +212,9 @@ public class Model extends Observable {
             for (int c = 0; c < size; c++) {
                 var tile = b.tile(c, r);
 
-                var rightIndex = c + 1;
-                Tile rightTile = null;
-                if (rightIndex <= size - 1) {
-                    rightTile = b.tile(rightIndex, r);
-                }
+                Tile rightTile = getAdjacentTile(b, size, r, c + 1, true);
 
-                var belowIndex = r + 1;
-                Tile belowTile = null;
-                if (belowIndex <= size - 1) {
-                    belowTile = b.tile(c, belowIndex);
-                }
+                Tile belowTile = getAdjacentTile(b, size, r + 1, c, false);
 
                 if (rightTile != null && tile.value() == rightTile.value() ||
                         belowTile != null && tile.value() == belowTile.value()) {
@@ -194,6 +223,17 @@ public class Model extends Observable {
             }
         }
         return false;
+    }
+
+    private static Tile getAdjacentTile(Board b, int size, int r, int c, boolean lookRight) {
+        var directionIndex = lookRight ? c : r;
+
+        Tile tile = null;
+        if (directionIndex <= size - 1) {
+            tile = b.tile(c, r);
+        }
+
+        return tile;
     }
 
 
